@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Pay code</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+    background: #f4f6f8; color: #111; -webkit-tap-highlight-color: transparent;
+  }
+  main { width: 100%; max-width: 420px; padding: 28px 20px; text-align: center; }
+  .label { font-size: 15px; color: #555; margin: 0 0 10px; }
+  .code {
+    font: 700 34px/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    letter-spacing: 1px; word-break: break-all;
+    background: #fff; border: 2px solid #dde2e7; border-radius: 16px; padding: 22px 12px;
+    user-select: all; -webkit-user-select: all;
+  }
+  button {
+    display: block; width: 100%; margin-top: 16px; padding: 20px; border: 0; border-radius: 14px;
+    font-size: 21px; font-weight: 700; cursor: pointer;
+  }
+  #copy { background: #0a7d3b; color: #fff; }
+  #copy.done { background: #0b5c2e; }
+  #dial { background: #fff; color: #0a7d3b; border: 2px solid #0a7d3b; }
+  ol { text-align: left; font-size: 16px; line-height: 1.7; color: #333; padding-left: 22px; margin: 22px 0 0; }
+  .err { color: #b00020; font-size: 18px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <p class="label">Payment code</p>
+  <div class="code" id="code">…</div>
+
+  <button id="copy" type="button">Copy code</button>
+  <button id="dial" type="button" hidden>Open dial pad</button>
+
+  <ol id="steps-ios" hidden>
+    <li>Tap <b>Copy code</b></li>
+    <li>Open <b>Phone → Keypad</b></li>
+    <li>Hold the top of the keypad → <b>Paste</b></li>
+    <li>Type the amount and <b>#</b>, then call</li>
+  </ol>
+  <ol id="steps-android" hidden>
+    <li>Tap <b>Open dial pad</b> (or Copy and paste it)</li>
+    <li>Type the amount and <b>#</b>, then call</li>
+  </ol>
+</main>
+<script>
+(function () {
+  // Code comes from the link: index.html?c=*712*611445261*  (or #*712*611445261*)
+  var raw = new URLSearchParams(location.search).get("c") || decodeURIComponent(location.hash.slice(1));
+  var code = (raw || "").replace(/[^0-9*#]/g, "");
+  var el = document.getElementById("code");
+  if (!/^\*\d+\*[\d*]*#?$/.test(code)) {
+    el.innerHTML = '<span class="err">No valid code in this link</span>';
+    document.getElementById("copy").hidden = true;
+    return;
+  }
+  el.textContent = code;
+
+  var ua = navigator.userAgent;
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+  var telUrl = "tel:" + code.replace(/#/g, "%23");
+
+  document.getElementById(isAndroid ? "steps-android" : "steps-ios").hidden = false;
+
+  if (isAndroid) {
+    var dial = document.getElementById("dial");
+    dial.hidden = false;
+    dial.onclick = function () { location.href = telUrl; };
+    // Try to open the dial pad straight away; the button stays as a fallback.
+    setTimeout(function () { location.href = telUrl; }, 300);
+  }
+
+  var btn = document.getElementById("copy");
+  function done() {
+    btn.textContent = "Copied ✓  now paste it in Keypad";
+    btn.className = "done";
+  }
+  function fallbackCopy() {
+    var t = document.createElement("textarea");
+    t.value = code; t.setAttribute("readonly", "");
+    t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t);
+    t.select(); t.setSelectionRange(0, code.length);
+    var ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(t);
+    if (ok) done(); else btn.textContent = "Hold the code above → Copy";
+  }
+  btn.onclick = function () {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(code).then(done, fallbackCopy);
+    } else fallbackCopy();
+  };
+})();
+</script>
+</body>
+</html>
