@@ -27,6 +27,7 @@
   #copy { background: #0a7d3b; color: #fff; }
   #copy.done { background: #0b5c2e; }
   #dial { background: #fff; color: #0a7d3b; border: 2px solid #0a7d3b; }
+  #keypad { background: #1060d0; color: #fff; }
   ol { text-align: left; font-size: 16px; line-height: 1.7; color: #333; padding-left: 22px; margin: 22px 0 0; }
   .err { color: #b00020; font-size: 18px; }
   [hidden] { display: none !important; }
@@ -39,10 +40,11 @@
 
   <button id="copy" type="button">Copy code</button>
   <button id="dial" type="button" hidden>Open dial pad</button>
+  <button id="keypad" type="button" hidden>Open Keypad →</button>
 
   <ol id="steps-ios" hidden>
     <li>Tap <b>Copy code</b></li>
-    <li>Open <b>Phone → Keypad</b></li>
+    <li>Tap <b>Open Keypad</b> (or open <b>Phone → Keypad</b>)</li>
     <li>Hold the top of the keypad → <b>Paste</b></li>
     <li>Type the amount and <b>#</b>, then call</li>
   </ol>
@@ -80,9 +82,15 @@
   }
 
   var btn = document.getElementById("copy");
+  // After copying: a button to jump to the phone's keypad.
+  // iPhone has no official link to the Keypad; "mobilephone://" opens the Phone app (undocumented).
+  // Android: tel: opens the dial pad with the code already filled in.
+  var keypad = document.getElementById("keypad");
+  keypad.onclick = function () { location.href = isIOS ? "mobilephone://" : telUrl; };
   function done() {
-    btn.textContent = "Copied ✓  now paste it in Keypad";
+    btn.textContent = "Copied ✓";
     btn.className = "done";
+    keypad.hidden = false;
   }
   function fallbackCopy() {
     var t = document.createElement("textarea");
